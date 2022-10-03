@@ -1,0 +1,47 @@
+---
+title: "Assignment_01"
+author: "yash_patel"
+date: "2022-10-02"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Assignment_01
+
+```{r Carseats}
+#install.packages(ISLR)
+library(ISLR)
+summary(Carseats)
+# IQR = Q3 - Q1 = 131 - 100 = 31
+IQR(Carseats$Price)
+
+```
+## IQR of the Price attribute is 31.
+## According to summary statistics of Carseats Data the Maximum value of Advertising attribute is 29.
+
+
+
+
+# SCATTER PLOT OF SALES AGAINST PRICE
+
+
+```{r pressure, echo=FALSE}
+
+#install.packages("tidyverse")
+library(tidyverse)
+ggplot(Carseats,mapping = aes(x = Sales, y = Price)) + geom_point()
+cor(x = Carseats$Price,y = Carseats$Sales, method = "pearson")
+
+
+```
+
+## Correlation of the Price and Sales attribute is :
+## "-0.4449507".
+## The sign of the correlation coefficient suggest that there is a negative correlation between Price and Sales.
+
+
