@@ -1,0 +1,211 @@
+---
+title: "Online_Retail_Yash"
+author: "Yash_Patel"
+date: "2022-10-31"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# loading the package
+library(tidyverse)
+# adding dataset
+or <-  read.csv("C:/Users/YASH/Downloads/Online_Retail.csv") 
+
+```
+# Q1. 
+Show the breakdown of the number of transactions by countries i.e., how many transactions are 
+in the dataset for each country (consider all records including cancelled transactions). Show this 
+in total number and also in percentage. Show only countries accounting for more than 1% of the 
+total transactions. 
+```{r}
+#grouped by the countries and showing the countries with more than 1% of total transaction
+or_1 <- group_by(or,Country) %>% summarise( Total_Transactions=length(InvoiceNo)) %>% filter(Total_Transactions > ((nrow(or)) * 1/100))
+or_1  
+
+```
+# Q2.
+Create  a  new  variable  ‘TransactionValue’  that  is  the  product  of  the  exising  ‘Quantity’  and  
+‘UnitPrice’ variables. Add this variable to the dataframe. 
+```{r}
+#adding transaction value column
+or_2 <- mutate(or,TransactionValue= Quantity * UnitPrice) #%>% select(Quantity,UnitPrice,Description) %>% filter( UnitPrice < 0)
+head(select(or_2, TransactionValue))
+```
+# Q3.
+Using the newly created variable, TransactionValue, show the breakdown of transaction values 
+by countries i.e. how much money in total has been spent each country. Show this in total sum of 
+transaction values. Show only countries with total transaction exceeding 130,000 British Pound. 
+```{r}
+#adding TotalTransactionValue column and filtering it for the transaction greater than 130000
+or_3 <- group_by(or_2,Country)  %>% summarise(TotalTransactionValue=sum(TransactionValue)) %>% filter(TotalTransactionValue>130000)
+or_3
+```
+
+# Q4.
+```{r}
+Temp=strptime(or$InvoiceDate,format='%m/%d/%Y %H:%M',tz='GMT') 
+#head(Temp)
+
+or$New_Invoice_Date <- as.Date(Temp)
+#or$New_Invoice_Date[20000]- or$New_Invoice_Date[10] 
+or$Invoice_Day_Week= weekdays(or$New_Invoice_Date) 
+or$New_Invoice_Hour = as.numeric(format(Temp, "%H")) 
+or$New_Invoice_Month = as.numeric(format(Temp, "%m")) 
+
+# a) Show  the  percentage  of  transactions  (by  numbers)  by  days  of  the  week    
+
+or_4.1 <- group_by(or,Invoice_Day_Week) %>% drop_na() %>%  count()
+or_4.1$perc <- (or_4.1$n/sum(or_4.1$n)) * 100 
+or_4.1
+
+# b) Show the percentage of transactions (by transaction volume) by days of the week 
+
+or_4.2 <- group_by(or,Invoice_Day_Week) %>% select(Invoice_Day_Week,Quantity) %>%  drop_na() %>%  count()
+or_4.2$perc <- (or_4.2$n/sum(or_4.2$n)) * 100 
+or_4.2
+
+# c) Show the percentage of transactions (by transaction volume) by month of the year 
+
+or_4.3 <- group_by(or,New_Invoice_Month) %>% select(New_Invoice_Month, Quantity) %>% drop_na() %>%  count()
+or_4.3$perc <- (or_4.3$n/sum(or_4.3$n)) * 100 
+or_4.3
+
+# d) What was the date with the highest number of transactions from Australia? 
+or_4.4 <- group_by(or, New_Invoice_Date) %>% drop_na()%>% select(New_Invoice_Date, Country) %>% filter( Country == "Australia" ) %>% count()
+max3 <- max(or_4.4$n)
+or_4.4.1 <- or_4.4 %>% filter(n == max3)
+or_4.4.1
+
+```
+
+
+# Q5.
+Plot  the  histogram  of  transaction  values  from  Germany.  Use  the  hist()  function  to  plot.  
+```{r}
+#filtering or_2 dataset to select Germany as Country and then selecting Country TransactionValue column 
+or_5 <- filter(or_2, Country == "Germany" ) %>% select(Country, TransactionValue)
+
+#assigning variable for histogram 
+"Transaction value from Germany" <-  or_5$TransactionValue
+
+#creating histogram using hist function
+hist(`Transaction value from Germany`)
+
+```
+
+# Q6.
+1.Which customer had the highest number of transactions? 
+2.Which customer is most valuable (i.e. highest total sum of transactions)?
+```{r}
+#1
+#counting the total transaction by CustomerID and droping the observation without ColumnID
+or_6.0 <- group_by(or_2,CustomerID) %>% summarise( Total_Transactions=length(TransactionValue)) %>% drop_na()
+
+#finding the largest number
+max0<- max(or_6.0$Total_Transactions)
+
+#filtering the data to get the CustomerID with Maximum transaction
+or_6.0_max <- filter(or_6.0,Total_Transactions== max0)
+
+or_6.0_max
+
+#2
+#totaling the TotalTransactionValue by CustomerID and droping the observation without ColumnID
+or_6.1 <- group_by(or_2,CustomerID) %>%  summarise(TotalTransactionValue=sum(TransactionValue)) %>% drop_na()
+
+#finding the largest number
+max1 <- max(or_6.1$TotalTransactionValue)
+
+#filtering the data to get the CustomerID with Maximum TotalTransactionValue 
+or_6.1_max <- filter(or_6.1,TotalTransactionValue== max1)
+
+or_6.1_max  
+
+```
+# Q7.
+Calculate the percentage of missing values for each variable in the dataset
+```{r}
+colMeans(is.na(or_2)) #25%(24.92669)
+
+
+#or
+
+summary(or)
+#only ColumnID variable has missing value
+
+or_7 <- (135080*100)/541909
+
+or_7 # ~25%(24.92669)
+
+```
+
+# Q8.
+What  are  the  number  of  transactions  with  missing  CustomerID  records  by  countries?
+```{r}
+#Filtering the Missing CustomeID records and Counting it by Countries under new Column "Total_Transaction"
+or_8 <- group_by(or_2,Country ) %>% filter(is.na(CustomerID),Country !="Unspecified") %>% summarise( Total_Transactions=length(CustomerID))
+
+#First Arranging the Total_Transaction in descending order and adding Percentage column showing Total_Transaction in Percentage.
+or_8.1 <- or_8 %>% arrange(desc(Total_Transactions)) %>% mutate(percentage = Total_Transactions / sum(Total_Transactions) * 100)
+or_8.1
+```
+
+# Q9.
+On average, how often the costumers comeback to the website for their next shopping? (i.e. what 
+is the average number of days between consecutive shopping) 
+```{r}
+or_9<- or %>% select(CustomerID,New_Invoice_Date) %>% group_by(CustomerID) %>% distinct(New_Invoice_Date) %>% arrange(desc(CustomerID)) %>%  mutate(Days_Between = New_Invoice_Date-lag(New_Invoice_Date)) %>% filter(!is.na(Days_Between)) 
+mean(or_9$Days_Between)
+
+```
+
+# Q10.
+In the retail sector, it is very important to understand the return rate of the goods purchased by 
+customers.  In  this  example,  we  can  define  this  quantity,  simply,  as  the  ratio  of  the  number  of 
+transactions cancelled (regardless of the transaction value) over the total number of transactions. 
+With  this  definition,  what  is  the  return  rate  for  the  French  customers? 
+Consider the cancelled transactions as those where the ‘Quantity’ variable has a negative value
+```{r}
+#Return  rate  for  the  French  customers
+
+#counting the total number of transaction 
+x.0 <-filter(or_2,Country == "France") %>% count()
+#counting the transaction with negative quantity
+y.0 <-filter(or_2,Country == "France",Quantity < 0) %>% count()
+#finally finding the return rate for the french customers dividing the  number  of transactions cancelled over the total number of transactions. 
+or_10 <-summarise(or_2, Return_rate_for_the_French_customers= y.0/ x.0 * 100)
+or_10 #(1.741264)
+```
+
+# Q11.
+What is the product that has generated the highest revenue for the retailer? (i.e. item with the 
+highest total sum of ‘TransactionValue’).
+```{r}
+#grouping the dataset by StockCode and using summarise function to find the Total Transaction Value
+
+or_11 <- group_by(or_2, StockCode) %>%  summarise( Total_Transac_val = sum(TransactionValue))
+#finding the largest Value
+max2 <- max(or_11$Total_Transac_val)
+#filtering the dataset to get the Stockcode which has the largest Value
+or_11.1 <- filter(or_11,Total_Transac_val==max2)
+or_11.1
+```
+
+
+# Q12.
+How many unique customers are represented in the dataset?
+```{r}
+#finding the unique customer using the unique() function and droping the empty observations and then counting the actual unique customers using the count function.
+or_12 <- data.frame(unique(or_2$CustomerID)) %>% drop_na() %>% count("Total_Unique_customers")
+or_12 
+
+```
+
